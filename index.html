@@ -13,14 +13,14 @@
 </head>
 <body>
 
-<!-- Landing Page -->
+<!-- Landing -->
 <section id="landing" class="active">
   <h1>Welcome to Your Streaming Maze</h1>
   <p>Discover content tailored to your interests!</p>
   <button class="btn" onclick="nextSection('form')">Start</button>
 </section>
 
-<!-- Interests Form -->
+<!-- Form Section -->
 <section id="form">
   <h1>Tell Us About Yourself</h1>
   <form id="interestsForm">
@@ -37,16 +37,15 @@
   </form>
 </section>
 
-<!-- Final Page -->
+<!-- Final Section -->
 <section id="final">
   <h1>🎉 Your Personalized Page is Ready!</h1>
   <p>Your unique code: <strong id="finalID"></strong></p>
-  <p>Bookmark this page or add it to your iOS home screen to start streaming!</p>
+  <p>Bookmark this page or add it to your iOS home screen!</p>
   <p id="userInterests"></p>
 </section>
 
 <script>
-// Show/hide sections
 function nextSection(id) {
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -58,22 +57,15 @@ document.getElementById('interestsForm').addEventListener('submit', async (e) =>
   const form = e.target;
   const data = new FormData(form);
 
-  // POST to /submit in Worker
   const res = await fetch('/submit', { method:'POST', body: data });
-
-  // Extract final ID & display it
   const finalURL = res.url || window.location.href;
   const urlParams = new URL(finalURL).searchParams;
   const id = urlParams.get('id') || Math.floor(Math.random()*9000 + 1000);
-  const name = data.get('name');
-  const interests = data.get('interests');
-  const content = data.get('content');
 
   document.getElementById('finalID').textContent = id;
-  document.getElementById('userInterests').textContent = `Hello ${name}, you want to see: ${content}. Your interests: ${interests}`;
+  document.getElementById('userInterests').textContent = `Hello ${data.get('name')}, you want to see ${data.get('content')}. Interests: ${data.get('interests')}`;
   nextSection('final');
 });
 </script>
-
 </body>
 </html>
