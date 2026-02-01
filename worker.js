@@ -16,8 +16,8 @@ export default {
       return Math.floor(1000 + Math.random() * 9000);
     }
 
-    // ENTRY: redirect to first step with token
-    if (pathname === '/') {
+    // START: user clicks Start → create token → redirect to first step
+    if (pathname === '/start') {
       const token = generateToken();
       await env.MAZE_TOKENS.put(token, '', { expirationTtl: 3600 });
       return Response.redirect(`/step/1?token=${token}`, 302);
@@ -28,28 +28,33 @@ export default {
       const stepNumber = parseInt(pathname.split('/')[2]);
       const token = params.get('token');
       if (!token) return Response.redirect('/', 302);
+
       const stored = await env.MAZE_TOKENS.get(token);
       if (stored === null) return Response.redirect('/', 302);
 
-      const lastStep = 3; // can increase to 5–10
+      const lastStep = 3; // change this to 5-10 for more redirects
       if (stepNumber < lastStep) {
         const nextStep = stepNumber + 1;
         return Response.redirect(`/step/${nextStep}?token=${token}&src=step${stepNumber}`, 302);
       } else {
-        // Last step: FORM
+        // Last step: show form HTML directly
         return new Response(`
           <!DOCTYPE html>
           <html>
           <head>
             <meta charset="UTF-8">
             <title>Final Step - Form</title>
-            <style>body{font-family:sans-serif;text-align:center;margin-top:50px;}</style>
+            <style>
+              body { font-family: sans-serif; text-align:center; margin-top:50px; }
+              input { padding:10px; margin:5px; }
+              button { padding:10px; }
+            </style>
             <script src="/maze.js"></script>
           </head>
           <body>
             <h1>Final Step: Submit Form</h1>
             <form method="POST" action="/submit?token=${token}">
-              <input name="name" placeholder="Enter your name" required />
+              <input name="name" placeholder="Enter your name" required>
               <button type="submit">Submit</button>
             </form>
           </body>
@@ -62,6 +67,7 @@ export default {
     if (pathname === '/submit' && request.method === 'POST') {
       const token = params.get('token');
       if (!token) return Response.redirect('/', 302);
+
       const stored = await env.MAZE_TOKENS.get(token);
       if (stored === null) return Response.redirect('/', 302);
 
@@ -69,16 +75,16 @@ export default {
       const name = formData.get('name') || 'Guest';
       const finalID = generateFinalID();
 
-      await env.MAZE_TOKENS.put(token, finalID.toString(), { expirationTtl: 24 * 3600 });
+      await env.MAZE_TOKENS.put(token, finalID.toString(), { expirationTtl: 24*3600 });
 
-      return Response.redirect(`/page/id/${finalID}?token=${token}`, 302);
+      return Response.redirect(`/final?id=${finalID}&token=${token}`, 302);
     }
 
     // FINAL PAGE
-    if (pathname.startsWith('/page/id/')) {
-      const id = pathname.split('/')[3];
+    if (pathname === '/final') {
       const token = params.get('token');
-      if (!token) return Response.redirect('/', 302);
+      const id = params.get('id');
+      if (!token || !id) return Response.redirect('/', 302);
 
       const storedID = await env.MAZE_TOKENS.get(token);
       if (storedID === null || storedID !== id) return Response.redirect('/', 302);
@@ -103,17 +109,21 @@ export default {
       `, { headers: { 'Content-Type': 'text/html' } });
     }
 
-    // SCRIPT: Serve maze.js
+    // SCRIPT: serve maze.js
     if (pathname === '/maze.js') {
       return new Response(`
-        // Simple script for fun effects
         document.addEventListener('DOMContentLoaded', () => {
-          console.log('Maze script active! Enjoy your secret redirect maze 😉');
+          console.log('🌀 Maze script active! Secret redirect maze!');
         });
       `, { headers: { 'Content-Type': 'application/javascript' } });
     }
 
-    // DEFAULT: redirect to entry
+    // DEFAULT: serve index.html
+    if (pathname === '/' || pathname === '/index.html') {
+      return fetch(new Request(`${url.origin}/index.html`));
+    }
+
+    // Anything else → redirect to /
     return Response.redirect('/', 302);
   }
 };
