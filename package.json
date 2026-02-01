@@ -1,7 +1,7 @@
 {
   "name": "cloudflare-maze",
   "version": "1.0.0",
-  "description": "Secret redirect maze with Cloudflare Worker",
+  "description": "Single page streaming maze with Cloudflare Worker",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler publish"
