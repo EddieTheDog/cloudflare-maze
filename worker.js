@@ -4,12 +4,11 @@ export default {
     const pathname = url.pathname;
     const params = url.searchParams;
 
+    // Helpers
     function generateToken(length = 10) {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       let token = '';
-      for (let i = 0; i < length; i++) {
-        token += chars[Math.floor(Math.random() * chars.length)];
-      }
+      for (let i = 0; i < length; i++) token += chars[Math.floor(Math.random() * chars.length)];
       return token;
     }
 
@@ -17,44 +16,52 @@ export default {
       return Math.floor(1000 + Math.random() * 9000);
     }
 
+    // ENTRY: redirect to first step with token
     if (pathname === '/') {
       const token = generateToken();
       await env.MAZE_TOKENS.put(token, '', { expirationTtl: 3600 });
       return Response.redirect(`/step/1?token=${token}`, 302);
     }
 
+    // STACKED REDIRECTS
     if (pathname.startsWith('/step/')) {
       const stepNumber = parseInt(pathname.split('/')[2]);
       const token = params.get('token');
-
       if (!token) return Response.redirect('/', 302);
-
       const stored = await env.MAZE_TOKENS.get(token);
       if (stored === null) return Response.redirect('/', 302);
 
-      const lastStep = 3;
+      const lastStep = 3; // can increase to 5–10
       if (stepNumber < lastStep) {
         const nextStep = stepNumber + 1;
         return Response.redirect(`/step/${nextStep}?token=${token}&src=step${stepNumber}`, 302);
       } else {
+        // Last step: FORM
         return new Response(`
+          <!DOCTYPE html>
           <html>
-            <body style="font-family:sans-serif;text-align:center;margin-top:50px;">
-              <h1>Final Step: Submit Form</h1>
-              <form method="POST" action="/submit?token=${token}">
-                <input name="name" placeholder="Enter your name" required />
-                <button type="submit">Submit</button>
-              </form>
-            </body>
+          <head>
+            <meta charset="UTF-8">
+            <title>Final Step - Form</title>
+            <style>body{font-family:sans-serif;text-align:center;margin-top:50px;}</style>
+            <script src="/maze.js"></script>
+          </head>
+          <body>
+            <h1>Final Step: Submit Form</h1>
+            <form method="POST" action="/submit?token=${token}">
+              <input name="name" placeholder="Enter your name" required />
+              <button type="submit">Submit</button>
+            </form>
+          </body>
           </html>
         `, { headers: { 'Content-Type': 'text/html' } });
       }
     }
 
+    // FORM SUBMISSION
     if (pathname === '/submit' && request.method === 'POST') {
       const token = params.get('token');
       if (!token) return Response.redirect('/', 302);
-
       const stored = await env.MAZE_TOKENS.get(token);
       if (stored === null) return Response.redirect('/', 302);
 
@@ -67,26 +74,46 @@ export default {
       return Response.redirect(`/page/id/${finalID}?token=${token}`, 302);
     }
 
+    // FINAL PAGE
     if (pathname.startsWith('/page/id/')) {
       const id = pathname.split('/')[3];
       const token = params.get('token');
-
       if (!token) return Response.redirect('/', 302);
 
       const storedID = await env.MAZE_TOKENS.get(token);
       if (storedID === null || storedID !== id) return Response.redirect('/', 302);
 
       return new Response(`
+        <!DOCTYPE html>
         <html>
-          <body style="font-family:sans-serif;text-align:center;margin-top:50px;">
-            <h1>🎉 Your Permanent Page</h1>
-            <p>Your unique code is: <strong>${id}</strong></p>
-            <p>Bookmark this page or add it to your iOS home screen!</p>
-          </body>
+        <head>
+          <meta charset="UTF-8">
+          <title>🎉 Your Permanent Page</title>
+          <style>
+            body{font-family:sans-serif;text-align:center;margin-top:50px;}
+          </style>
+          <script src="/maze.js"></script>
+        </head>
+        <body>
+          <h1>🎉 Your Permanent Page</h1>
+          <p>Your unique code is: <strong>${id}</strong></p>
+          <p>Bookmark this page or add it to your iOS home screen!</p>
+        </body>
         </html>
       `, { headers: { 'Content-Type': 'text/html' } });
     }
 
+    // SCRIPT: Serve maze.js
+    if (pathname === '/maze.js') {
+      return new Response(`
+        // Simple script for fun effects
+        document.addEventListener('DOMContentLoaded', () => {
+          console.log('Maze script active! Enjoy your secret redirect maze 😉');
+        });
+      `, { headers: { 'Content-Type': 'application/javascript' } });
+    }
+
+    // DEFAULT: redirect to entry
     return Response.redirect('/', 302);
   }
 };
