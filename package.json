@@ -1,0 +1,13 @@
+{
+  "name": "cloudflare-maze",
+  "version": "1.0.0",
+  "description": "A cool redirect maze with Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
