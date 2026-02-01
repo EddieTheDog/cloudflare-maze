@@ -1,19 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Secret Maze</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
-    input { padding: 10px; margin: 5px; }
-    button { padding: 10px; }
-  </style>
+<meta charset="UTF-8">
+<title>HD Streaming Maze</title>
+<style>
+  body { font-family:sans-serif; text-align:center; margin:0; padding:0; background:#111; color:white;}
+  section { display:none; padding:50px; min-height:100vh; }
+  .active { display:block; }
+  input, select, button { padding:10px; margin:5px; font-size:16px; }
+  .btn { cursor:pointer; background:#ff5722; border:none; color:white; }
+</style>
 </head>
 <body>
-  <h1>Welcome to the Secret Redirect Maze</h1>
-  <p>Click the button to start your journey!</p>
-  <form id="startMazeForm" method="GET" action="/start">
-    <button type="submit">Start</button>
+
+<!-- Landing Page -->
+<section id="landing" class="active">
+  <h1>Welcome to Your Streaming Maze</h1>
+  <p>Discover content tailored to your interests!</p>
+  <button class="btn" onclick="nextSection('form')">Start</button>
+</section>
+
+<!-- Interests Form -->
+<section id="form">
+  <h1>Tell Us About Yourself</h1>
+  <form id="interestsForm">
+    <input type="text" name="name" placeholder="Your Name" required><br>
+    <input type="text" name="interests" placeholder="Your Interests" required><br>
+    <select name="content">
+      <option value="">What do you want to see?</option>
+      <option value="movies">Movies</option>
+      <option value="tv">TV Shows</option>
+      <option value="documentaries">Documentaries</option>
+      <option value="shorts">Shorts</option>
+    </select><br>
+    <button type="submit" class="btn">Submit</button>
   </form>
+</section>
+
+<!-- Final Page -->
+<section id="final">
+  <h1>🎉 Your Personalized Page is Ready!</h1>
+  <p>Your unique code: <strong id="finalID"></strong></p>
+  <p>Bookmark this page or add it to your iOS home screen to start streaming!</p>
+  <p id="userInterests"></p>
+</section>
+
+<script>
+// Show/hide sections
+function nextSection(id) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Handle form submission
+document.getElementById('interestsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const data = new FormData(form);
+
+  // POST to /submit in Worker
+  const res = await fetch('/submit', { method:'POST', body: data });
+
+  // Extract final ID & display it
+  const finalURL = res.url || window.location.href;
+  const urlParams = new URL(finalURL).searchParams;
+  const id = urlParams.get('id') || Math.floor(Math.random()*9000 + 1000);
+  const name = data.get('name');
+  const interests = data.get('interests');
+  const content = data.get('content');
+
+  document.getElementById('finalID').textContent = id;
+  document.getElementById('userInterests').textContent = `Hello ${name}, you want to see: ${content}. Your interests: ${interests}`;
+  nextSection('final');
+});
+</script>
+
 </body>
 </html>
