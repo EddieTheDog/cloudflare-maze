@@ -1,7 +1,0 @@
-name = "cloudflare-maze"
-main = "worker.js"
-compatibility_date = "2026-02-01"
-
-kv_namespaces = [
-  { binding = "MAZE_TOKENS", id = "YOUR_KV_NAMESPACE_ID_HERE" }
-]
